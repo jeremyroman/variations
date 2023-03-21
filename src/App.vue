@@ -1,47 +1,62 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { ref, computed } from 'vue'
+
+import { trialsFromCommandLine } from './parse'
+
+function writeToClipboard(event) {
+  navigator.clipboard.writeText(event.currentTarget.textContent)
+}
+
+const commandLineVariations = ref('')
+const trials = computed(() => trialsFromCommandLine(commandLineVariations.value))
+const jsonTrials = computed(() => JSON.stringify(trials.value, null, 4))
+
+const studyRegex = ref(new URLSearchParams(location.search).get('study') ?? '')
+const filteredTrials = computed(() => {
+  let studyRegexCompiled
+  try {
+    studyRegexCompiled = new RegExp(studyRegex.value)
+  } catch {
+    return {}
+  }
+  let result = Object.fromEntries(
+    Object.entries(trials.value).filter(([trial, info]) => {
+      return studyRegexCompiled.test(trial)
+    })
+  )
+  console.log(result)
+  return result
+})
+const jsonFiltered = computed(() => JSON.stringify(filteredTrials.value, null, 4))
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
+  <div>
+    <p>
+      Navigate to
+      <code class="copyable" @click.prevent="writeToClipboard">
+        chrome://version/?show-variations-cmd
+      </code>
+      (click to copy) and paste the <strong>Command-line variations</strong> value below.
+    </p>
+    <textarea v-model="commandLineVariations" rows="10" cols="80"></textarea>
+  </div>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
+  <details>
+    <summary>Extracted data (JSON)</summary>
+    <pre>{{ jsonTrials }}</pre>
+  </details>
 
-  <main>
-    <TheWelcome />
-  </main>
+  <div>
+    <p>You can filter the output with the following.</p>
+    <p>Study name (regex): <input size="60" v-model="studyRegex" /></p>
+  </div>
+
+  <pre>{{ jsonFiltered }}</pre>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.copyable {
+  cursor: pointer;
 }
 </style>
