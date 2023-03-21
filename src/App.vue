@@ -21,13 +21,11 @@ const filteredTrials = computed(() => {
   } catch {
     return {};
   }
-  let result = Object.fromEntries(
+  return Object.fromEntries(
     Object.entries(trials.value).filter(([trial, info]) => {
       return studyRegexCompiled.test(trial);
     })
   );
-  console.log(result);
-  return result;
 });
 const jsonFiltered = computed(() => JSON.stringify(filteredTrials.value, null, 4));
 </script>
